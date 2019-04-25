@@ -14,18 +14,16 @@ app.listen(port, () => {
     console.log('Server is connected ' + port);
 })
 
-const bcrypt = require('bcryptjs')
 
-const myFunction  = async () => {
-    const password = "Red12345";
-    // 密码和 route 8 || 10 都可以
-    const hashPass = await bcrypt.hash(password, 8);
+const jwt = require('jsonwebtoken');
 
-    console.log(password)
-    console.log(hashPass);
-
-    const isMatch = await bcrypt.compare('red12345', hashPass)
-    console.log(isMatch);
+const myFunction = () =>{
+    // object and string, expiresIn: days || week || second 
+    const token = jwt.sign({ _id: 'abc123' }, 'thisismynewcourse', { expiresIn: '7 days' })
+    console.log(token)
+    // token want to verify, ""
+    const data = jwt.verify(token, 'thisismynewcourse')
+    console.log(data);
 }
 
 myFunction();

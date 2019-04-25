@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -40,9 +41,26 @@ const userSchema = new mongoose.Schema({
                 throw new Error('Age must above zero')
             }
         }
-    }
+    },
+    tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
+    }]
 });
 
+// methods call Instance method 相式 prototype 设置一个方法
+userSchema.methods.generateAuthToken = async function (){
+    const user = this;
+    const token = jwt.sign({ _id: user._id.toString() }, 'thisismynewcourse');
+
+    user.token = user.tokens.concat({ token })
+    await user.save();
+    return token
+}
+
+// match email和 password  > statisc call Model method
 userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({ email })
 
@@ -65,7 +83,6 @@ userSchema.pre('save', async function(next){
     if(user.isModified('password')){
         user.password = await bcrypt.hash(user.password, 8);
     } 
-
 
     next();
 })
