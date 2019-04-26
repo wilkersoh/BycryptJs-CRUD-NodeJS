@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 7,
-        maxlength: 15,
+        // maxlength: 15,
         trim: true,
         validate(value){
             if(value.toLowerCase().includes("password")){
@@ -50,13 +50,24 @@ const userSchema = new mongoose.Schema({
     }]
 });
 
-// methods call Instance method 相式 prototype 设置一个方法
-userSchema.methods.generateAuthToken = async function(){
+// 不暴露 client token资料
+userSchema.methods.toJSON = function (){
     const user = this;
-    const token = jwt.sign({ _id: user._id.toString() }, 'thisismynewcourse');
+    const userObject = user.toObject();
 
-    user.tokens = user.tokens.concat({ token });
-    await user.save();
+    delete userObject.password;
+    delete userObject.tokens;
+
+    return userObject
+}
+
+// methods call Instance method 相式 prototype 设置一个方法
+userSchema.methods.generateAuthToken = async function () {
+    const user = this
+    const token = jwt.sign({ _id: user._id.toString() }, 'thisismynewcourse')
+
+    user.tokens = user.tokens.concat({ token })
+    await user.save()
 
     return token
 }
@@ -65,14 +76,14 @@ userSchema.methods.generateAuthToken = async function(){
 userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({ email })
 
-    if(!user){
-        throw new Error('Cannot to login')
+    if (!user) {
+        throw new Error('Unable to login')
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password)
 
-    if(!isMatch){
-        throw new Error('Unable to login');
+    if (!isMatch) {
+        throw new Error('Unable to login')
     }
 
     return user
@@ -84,6 +95,7 @@ userSchema.pre('save', async function(next){
     if(user.isModified('password')){
         user.password = await bcrypt.hash(user.password, 8);
     } 
+
 
     next();
 })
